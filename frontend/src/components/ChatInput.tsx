@@ -7,32 +7,30 @@
  * - Loading state durante envío
  * - Accesible: form nativo, labels, aria
  * - SIN selector de dirección: el servidor fija 'saliente'
- * - Recibe sendMutation desde el padre para unificar estado
+ * - La mutación viene del padre: una sola instancia para toda la pantalla
  */
 import { useState, FormEvent } from 'react'
-import { useSendMensaje } from '@/lib/query'
 import type { UseMutationResult } from '@tanstack/react-query'
 import type { CreateMensajeInput, CreateMensajeResponse } from '@/types'
 
 interface ChatInputProps {
-  chatId: number
-  sendMutation?: UseMutationResult<CreateMensajeResponse, Error, CreateMensajeInput, unknown>
+  sendMutation: UseMutationResult<CreateMensajeResponse, Error, CreateMensajeInput, unknown>
 }
 
-export function ChatInput({ chatId, sendMutation: externalSendMutation }: ChatInputProps) {
+export function ChatInput({ sendMutation }: ChatInputProps) {
   const [contenido, setContenido] = useState('')
-
-  // Usar sendMutation externo si se pasa, sino crear uno local (fallback)
-  const localSendMutation = useSendMensaje(chatId)
-  const sendMutation = externalSendMutation ?? localSendMutation
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     const trimmed = contenido.trim()
     if (!trimmed) return
 
-    sendMutation.mutate({ contenido: trimmed }) // SIN direccion
+    // Se limpia al enviar; si falla se restaura para no perder lo escrito
     setContenido('')
+    sendMutation.mutate(
+      { contenido: trimmed },
+      { onError: () => setContenido((actual) => actual || trimmed) }
+    )
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
