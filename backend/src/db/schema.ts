@@ -5,10 +5,10 @@
  * 
  * Cumple spec exacto:
  * - empresas: id, nombre
- * - chats: id, empresa_id, telefono, created_at (TIMESTAMPTZ)
+ * - chats: id, empresa_id, nombre, telefono, created_at (TIMESTAMPTZ)
  * - mensajes: id, chat_id, contenido, direccion, created_at (TIMESTAMPTZ)
  */
-import { pgTable, serial, text, integer, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, integer, timestamp } from 'drizzle-orm/pg-core'
 
 /**
  * Tabla: empresas

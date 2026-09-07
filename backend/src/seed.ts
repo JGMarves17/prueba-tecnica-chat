@@ -1,22 +1,28 @@
 /**
  * Seed script para poblar la base de datos con datos de prueba
- * Ejecutar con: npx tsx src/seed.ts (requiere DATABASE_URL en .env)
- * 
- * Idempotente: usa upsert (ON CONFLICT DO NOTHING) para no duplicar al re-ejecutar.
- * 
+ * Ejecutar con: npm run db:seed (requiere DATABASE_URL en .env)
+ *
+ * Idempotente de verdad: busca antes de insertar (select-then-insert).
+ * No usa onConflictDoNothing porque el schema del enunciado no define
+ * ninguna constraint UNIQUE sobre la que pudiera dispararse.
+ *
  * Crea:
  * - 1 Empresa: "AuthCode Demo"
- * - 1 Chat: nombre "Juan Pérez", teléfono "+34600123456" (chatId = 1)
- * - Mensajes mixtos: saliente (negocio) + entrante (cliente)
+ * - 1 Chat: nombre "Juan Perez", telefono "+34600123456"
+ * - 8 mensajes mixtos: saliente (negocio) + entrante (cliente)
  */
 import { drizzle } from 'drizzle-orm/neon-http'
 import { neon } from '@neondatabase/serverless'
 import { empresas, chats, mensajes } from './db/schema'
 import { eq, and } from 'drizzle-orm'
 
+const EMPRESA_NOMBRE = 'AuthCode Demo'
+const CHAT_TELEFONO = '+34600123456'
+const CHAT_NOMBRE = 'Juan Pérez'
+
 async function seed() {
   const databaseUrl = process.env.DATABASE_URL
-  
+
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL no configurada en .env')
     console.log('💡 Copia .env.example a .env y añade tu DATABASE_URL de Neon')
@@ -28,49 +34,43 @@ async function seed() {
   const db = drizzle(sql, { schema: { empresas, chats, mensajes } })
 
   try {
-    // 1. Crear empresa (idempotente: ON CONFLICT DO NOTHING)
-    console.log('📦 Creando empresa...')
-    const [empresa] = await db
-      .insert(empresas)
-      .values({ nombre: 'AuthCode Demo' })
-      .onConflictDoNothing()
-      .returning()
-    
-    let empresaId: number
+    // 1. Empresa (idempotente: buscar antes de insertar)
+    console.log('📦 Empresa...')
+    let [empresa] = await db
+      .select()
+      .from(empresas)
+      .where(eq(empresas.nombre, EMPRESA_NOMBRE))
+      .limit(1)
+
     if (empresa) {
-      empresaId = empresa.id
-      console.log(`✅ Empresa creada: AuthCode Demo (id: ${empresaId})`)
+      console.log(`ℹ️  Empresa ya existe: ${EMPRESA_NOMBRE} (id: ${empresa.id})`)
     } else {
-      // Ya existe, buscarla
-      const [existing] = await db.select().from(empresas).where(eq(empresas.nombre, 'AuthCode Demo')).limit(1)
-      empresaId = existing.id
-      console.log(`ℹ️ Empresa ya existe: AuthCode Demo (id: ${empresaId})`)
+      ;[empresa] = await db.insert(empresas).values({ nombre: EMPRESA_NOMBRE }).returning()
+      console.log(`✅ Empresa creada: ${EMPRESA_NOMBRE} (id: ${empresa.id})`)
     }
 
-    // 2. Crear chat con nombre y teléfono (idempotente)
-    console.log('💬 Creando chat...')
-    const [chat] = await db
-      .insert(chats)
-      .values({ 
-        empresaId, 
-        nombre: 'Juan Pérez',
-        telefono: '+34600123456' 
-      })
-      .onConflictDoNothing()
-      .returning()
-    
-    let chatId: number
+    // 2. Chat con nombre de contacto y telefono (idempotente)
+    console.log('💬 Chat...')
+    let [chat] = await db
+      .select()
+      .from(chats)
+      .where(and(eq(chats.empresaId, empresa.id), eq(chats.telefono, CHAT_TELEFONO)))
+      .limit(1)
+
     if (chat) {
-      chatId = chat.id
-      console.log(`✅ Chat creado: #${chatId} (${chat.nombre}, tel: +34600123456)`)
+      console.log(`ℹ️  Chat ya existe: #${chat.id} (${chat.nombre}, ${chat.telefono})`)
     } else {
-      const [existing] = await db.select().from(chats).where(eq(chats.telefono, '+34600123456')).limit(1)
-      chatId = existing.id
-      console.log(`ℹ️ Chat ya existe: #${chatId}`)
+      ;[chat] = await db
+        .insert(chats)
+        .values({ empresaId: empresa.id, nombre: CHAT_NOMBRE, telefono: CHAT_TELEFONO })
+        .returning()
+      console.log(`✅ Chat creado: #${chat.id} (${chat.nombre}, ${chat.telefono})`)
     }
 
-    // 3. Crear mensajes mixtos (idempotente: solo si no existen)
-    console.log('📨 Creando mensajes de prueba...')
+    const chatId = chat.id
+
+    // 3. Mensajes mixtos (idempotente: solo inserta los que falten)
+    console.log('📨 Mensajes...')
     const mensajesData = [
       { chatId, contenido: '¡Hola! Bienvenido a nuestro soporte. ¿En qué podemos ayudarte?', direccion: 'saliente' as const },
       { chatId, contenido: 'Hola, tengo una duda sobre mi factura del mes pasado.', direccion: 'entrante' as const },
@@ -89,18 +89,17 @@ async function seed() {
         .from(mensajes)
         .where(and(eq(mensajes.chatId, msg.chatId), eq(mensajes.contenido, msg.contenido)))
         .limit(1)
-      
+
       if (!existing) {
         await db.insert(mensajes).values(msg)
         creados++
       }
     }
-    console.log(`✅ ${creados} mensajes nuevos creados (total esperados: 8)`)
+    console.log(`✅ ${creados} mensajes nuevos (${mensajesData.length} esperados en total)`)
 
-    console.log('\n🎉 Seed completado con éxito!')
+    console.log('\n🎉 Seed completado. Re-ejecutarlo no duplica nada.')
     console.log(`📋 Chat de prueba: /chats/${chatId}`)
     console.log(`🔗 API: GET /chats/${chatId}/mensajes`)
-
   } catch (error) {
     console.error('❌ Error en seed:', error)
     process.exit(1)
