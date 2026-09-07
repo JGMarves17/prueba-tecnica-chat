@@ -29,7 +29,7 @@ const config: Config = {
     },
   },
   plugins: [],
-  darkMode: 'class',
+  darkMode: 'media', // sigue prefers-color-scheme; con 'class' nadie ponia .dark y las 27 clases dark: eran CSS muerto
 }
 
 export default config

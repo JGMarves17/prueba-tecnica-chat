@@ -41,22 +41,24 @@ export function ChatInput({ sendMutation }: ChatInputProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <div className="flex gap-2 items-end p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-        {/* Textarea para el mensaje */}
-        <textarea
+    <form onSubmit={handleSubmit} className="w-full shrink-0">
+      <div className="p-4 safe-bottom border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="flex gap-2 items-end">
+          {/* Textarea para el mensaje */}
+          <textarea
           value={contenido}
           onChange={(e) => setContenido(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escribe un mensaje... (Enter para enviar, Shift+Enter para nueva línea)"
+          placeholder="Escribe un mensaje…"
+          aria-describedby="hint-envio"
           rows={1}
           className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none min-h-[44px] max-h-[120px]"
           aria-label="Contenido del mensaje"
           disabled={sendMutation.isPending}
         />
 
-        {/* Botón de envío */}
-        <button
+          {/* Botón de envío */}
+          <button
           type="submit"
           disabled={!contenido.trim() || sendMutation.isPending}
           className="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -73,15 +75,21 @@ export function ChatInput({ sendMutation }: ChatInputProps) {
           ) : (
             'Enviar'
           )}
-        </button>
-      </div>
-
-      {/* Error message */}
-      {sendMutation.isError && (
-        <div className="px-4 pb-2 text-sm text-red-500" role="alert">
-          Error: {(sendMutation.error as Error)?.message || 'No se pudo enviar el mensaje'}
+          </button>
         </div>
-      )}
+
+        {/* Pista de teclado: fuera del placeholder para que no desborde en móvil */}
+        <p id="hint-envio" className="hidden sm:block mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+          Enter para enviar · Shift+Enter para nueva línea
+        </p>
+
+        {/* Error de envío */}
+        {sendMutation.isError && (
+          <p className="mt-2 text-sm text-red-500 dark:text-red-400" role="alert">
+            {(sendMutation.error as Error)?.message || 'No se pudo enviar el mensaje'}
+          </p>
+        )}
+      </div>
     </form>
   )
 }

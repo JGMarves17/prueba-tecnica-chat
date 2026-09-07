@@ -109,10 +109,13 @@
   }
 
   /* Safe area para móviles */
-  .safe-top { padding-top: env(safe-area-inset-top); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  .safe-left { padding-left: env(safe-area-inset-left); }
-  .safe-right { padding-right: env(safe-area-inset-right); }
+  /* env() vale 0 en escritorio, asi que sin max() estas clases ANULAN el
+     padding base (p-4) en vez de sumarse al notch. Con max() se respeta
+     el minimo en escritorio y crece en moviles con safe area. */
+  .safe-top { padding-top: max(1rem, env(safe-area-inset-top)); }
+  .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .safe-left { padding-left: max(1rem, env(safe-area-inset-left)); }
+  .safe-right { padding-right: max(1rem, env(safe-area-inset-right)); }
 }
 
 /* ========================================
