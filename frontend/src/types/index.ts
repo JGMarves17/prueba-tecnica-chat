@@ -15,6 +15,14 @@ export interface Mensaje {
   createdAt: string // ISO string from API
 }
 
+export interface Chat {
+  id: number
+  empresaId: number
+  nombre: string
+  telefono: string
+  createdAt: string
+}
+
 // Respuestas de la API
 export interface MensajesResponse {
   status: 'success'
@@ -22,6 +30,11 @@ export interface MensajesResponse {
   total: number
   limit: number
   offset: number
+}
+
+export interface ChatResponse {
+  status: 'success'
+  chat: Chat
 }
 
 export interface CreateMensajeResponse {

@@ -7,18 +7,24 @@
  * - Loading state durante envío
  * - Accesible: form nativo, labels, aria
  * - SIN selector de dirección: el servidor fija 'saliente'
+ * - Recibe sendMutation desde el padre para unificar estado
  */
 import { useState, FormEvent } from 'react'
 import { useSendMensaje } from '@/lib/query'
+import type { UseMutationResult } from '@tanstack/react-query'
+import type { CreateMensajeInput, CreateMensajeResponse } from '@/types'
 
 interface ChatInputProps {
   chatId: number
+  sendMutation?: UseMutationResult<CreateMensajeResponse, Error, CreateMensajeInput, unknown>
 }
 
-export function ChatInput({ chatId }: ChatInputProps) {
+export function ChatInput({ chatId, sendMutation: externalSendMutation }: ChatInputProps) {
   const [contenido, setContenido] = useState('')
 
-  const sendMutation = useSendMensaje(chatId)
+  // Usar sendMutation externo si se pasa, sino crear uno local (fallback)
+  const localSendMutation = useSendMensaje(chatId)
+  const sendMutation = externalSendMutation ?? localSendMutation
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()

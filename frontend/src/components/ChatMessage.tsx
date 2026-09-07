@@ -21,7 +21,7 @@ export function ChatMessage({ mensaje, onDelete }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        'flex gap-2 px-4 py-2 max-w-[80%] animate-fade-in relative',
+        'flex gap-2 px-4 py-2 max-w-[80%] animate-fade-in relative group',
         isSaliente ? 'justify-end' : 'justify-start'
       )}
     >
@@ -52,11 +52,11 @@ export function ChatMessage({ mensaje, onDelete }: ChatMessageProps) {
           {formatDate(mensaje.createdAt)}
         </time>
 
-        {/* Botón eliminar - solo visible en hover/focus */}
+        {/* Botón eliminar - visible al hacer hover en la burbuja (group-hover) */}
         {onDelete && (
           <button
             onClick={() => onDelete(mensaje.id)}
-            className="absolute top-1 right-1 p-1 rounded opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+            className="absolute top-1 right-1 p-1 rounded opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
             aria-label={`Eliminar mensaje ${mensaje.id}`}
             title="Eliminar mensaje"
           >

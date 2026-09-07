@@ -5,15 +5,23 @@
  * - Success: { status: "success", mensajes: [...] } | { status: "success", mensaje: {...} }
  * - Error:   { status: "error", message: "..." }
  */
-import type { Mensaje, MensajesResponse, CreateMensajeInput, CreateMensajeResponse, DeleteMensajeResponse, ApiError } from '@/types'
+import type { Mensaje, MensajesResponse, CreateMensajeInput, CreateMensajeResponse, DeleteMensajeResponse, ApiError, Chat, ChatResponse } from '@/types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'
 
 /**
  * Helper para manejar respuestas de la API con formato SPEC
+ * Incluye try/catch para errores de parsing JSON (ej: 502 HTML de Cloudflare)
  */
 async function handleResponse<T>(response: Response): Promise<T> {
-  const data = await response.json()
+  let data: unknown
+  
+  try {
+    data = await response.json()
+  } catch {
+    // Respuesta no es JSON válido (ej: HTML de error 502/503)
+    throw new Error(`HTTP ${response.status}: Respuesta no válida del servidor`)
+  }
   
   if (!response.ok) {
     // Error response: { status: "error", message: "..." }
@@ -70,6 +78,17 @@ export const api = {
     })
     return handleResponse<DeleteMensajeResponse>(response)
   },
+
+  /**
+   * Obtener info de un chat
+   * GET /chats/:chatId
+   */
+  getChat: async (chatId: number): Promise<ChatResponse> => {
+    const response = await fetch(`${API_BASE}/chats/${chatId}`, {
+      headers: { 'Content-Type': 'application/json' },
+    })
+    return handleResponse<ChatResponse>(response)
+  },
 }
 
 /**
@@ -77,4 +96,5 @@ export const api = {
  */
 export const apiKeys = {
   mensajes: (chatId: number) => ['mensajes', chatId] as const,
+  chat: (chatId: number) => ['chat', chatId] as const,
 }
