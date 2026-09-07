@@ -28,7 +28,6 @@ app.use('*', logger())
 // CORS con función para soportar wildcard *.vercel.app
 app.use('*', cors({
   origin: (origin, c) => {
-    const allowedOrigins = ['http://localhost:3000']
     const isVercel = origin?.endsWith('.vercel.app') ?? false
     const isLocal = origin === 'http://localhost:3000'
     
@@ -42,14 +41,14 @@ app.use('*', cors({
   credentials: true,
 }))
 
-// Middleware para inyectar db en el contexto
+// Health check (SIN middleware de BD - para que funcione aunque la BD esté caída)
+app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
+
+// Middleware para inyectar db en el contexto (después de health)
 app.use('*', async (c, next) => {
   c.set('db', getDb(c.env))
   await next()
 })
-
-// Health check
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
 
 // Montar rutas de chat (sin prefijo /api para cumplir spec exacto)
 app.route('/', chatRoutes)
