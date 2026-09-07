@@ -9,7 +9,3 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 # NO pongas DATABASE_URL aquí, usa Secrets en el dashboard:
 # wrangler secret put DATABASE_URL
-
-# Límites (plan gratuito: 10ms CPU)
-[limits]
-cpu_ms = 10

@@ -102,7 +102,7 @@ chatRoutes.get(
       .select()
       .from(mensajes)
       .where(eq(mensajes.chatId, chatId))
-      .orderBy(mensajes.createdAt) // ASC = mas antiguos primero
+      .orderBy(mensajes.createdAt, mensajes.id) // ASC; id desempata si coincide el timestamp
       .limit(limit)
       .offset(offset)
 

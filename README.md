@@ -4,19 +4,26 @@ SaaS de chat multi-tenant con backend en Cloudflare Workers + Neon Postgres y fr
 
 ## 🚀 URLs de Producción
 
-| Componente | URL | Estado |
-|------------|-----|--------|
-| **Backend API** | `https://chat-backend.<tu-subdominio>.workers.dev` | ⏳ Pendiente deploy |
-| **Frontend** | `https://chat-frontend.vercel.app` | ⏳ Pendiente deploy |
+| Componente | URL |
+|------------|-----|
+| **Frontend** (Vercel) | https://chat-frontend-ochre-psi.vercel.app |
+| **Backend API** (Cloudflare Workers) | https://chat-backend.gabrielmarves.workers.dev |
+| **Repositorio** | https://github.com/JGMarves17/prueba-tecnica-chat |
 
-> **Nota**: Reemplazar con URLs reales tras deploy.
+### 👉 Abrir el chat de ejemplo
+
+**https://chat-frontend-ochre-psi.vercel.app/chats/1**
+
+O la API directamente: [https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes](https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes)
 
 ## 📋 Chat de Prueba
 
 - **Chat ID**: `1`
 - **Teléfono**: `+34600123456`
-- **URL Frontend**: `https://chat-frontend.vercel.app/chats/1`
-- **API Directa**: `GET https://chat-backend.<tu-subdominio>.workers.dev/chats/1/mensajes`
+- **Nombre del contacto**: `Juan Pérez`
+- **URL Frontend**: https://chat-frontend-ochre-psi.vercel.app/chats/1
+- **API Directa**: `GET https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes`
+- **Info del chat**: `GET https://chat-backend.gabrielmarves.workers.dev/chats/1`
 
 El chat incluye 8 mensajes de prueba (mezcla saliente/entrante) simulando una conversación real de soporte.
 El seed es idempotente: re-ejecutarlo no duplica empresa, chat ni mensajes.
@@ -139,7 +146,7 @@ CREATE TABLE mensajes (
 ## 💻 Desarrollo Local
 
 ### Prerrequisitos
-- Node.js 20+
+- Node.js 20.18+ o 22+ (db:seed usa --env-file-if-exists)
 - Cuenta Neon (gratis en console.neon.tech)
 - Cuenta Cloudflare (gratis en dash.cloudflare.com)
 - Cuenta Vercel (gratis en vercel.com)
@@ -197,7 +204,7 @@ cd backend
 wrangler login
 wrangler secret put DATABASE_URL  # Pegar tu Neon URL
 wrangler deploy
-# URL: https://chat-backend.<tu-subdominio>.workers.dev
+# URL: https://chat-backend.gabrielmarves.workers.dev
 ```
 
 ### Frontend → Vercel
@@ -206,7 +213,7 @@ cd frontend
 vercel login
 vercel --prod
 # En Vercel Dashboard > Settings > Environment Variables:
-# NEXT_PUBLIC_API_URL = https://chat-backend.<tu-subdominio>.workers.dev
+# NEXT_PUBLIC_API_URL = https://chat-backend.gabrielmarves.workers.dev
 ```
 
 ## 📝 Variables de Entorno
