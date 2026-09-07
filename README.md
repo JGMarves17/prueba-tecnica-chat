@@ -139,7 +139,7 @@ CREATE TABLE mensajes (
 ## 💻 Desarrollo Local
 
 ### Prerrequisitos
-- Node.js 20+
+- Node.js 20.18+ o 22+ (db:seed usa --env-file-if-exists)
 - Cuenta Neon (gratis en console.neon.tech)
 - Cuenta Cloudflare (gratis en dash.cloudflare.com)
 - Cuenta Vercel (gratis en vercel.com)
