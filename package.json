@@ -3,18 +3,15 @@
   "version": "1.0.0",
   "description": "Chat SaaS - Backend (Hono + Neon) + Frontend (Next.js + React Query + Tailwind)",
   "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "scripts": {
-    "dev:backend": "npm run dev --workspace=backend",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "build:backend": "npm run build --workspace=backend",
-    "build:frontend": "npm run build --workspace=frontend",
-    "test:backend": "npm run test --workspace=backend",
-    "db:push": "npm run db:push --workspace=backend",
-    "db:seed": "npm run db:seed --workspace=backend"
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:backend": "npm --prefix backend test",
+    "db:push": "npm --prefix backend run db:push",
+    "db:seed": "npm --prefix backend run db:seed",
+    "deploy:backend": "npm --prefix backend run deploy"
   },
   "keywords": ["chat", "saas", "hono", "nextjs", "react-query", "tailwind"],
   "author": "",
