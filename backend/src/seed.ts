@@ -12,7 +12,7 @@
 import { drizzle } from 'drizzle-orm/neon-http'
 import { neon } from '@neondatabase/serverless'
 import { empresas, chats, mensajes } from './db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 async function seed() {
   const databaseUrl = process.env.DATABASE_URL
@@ -87,8 +87,7 @@ async function seed() {
       const [existing] = await db
         .select()
         .from(mensajes)
-        .where(eq(mensajes.chatId, msg.chatId))
-        .where(eq(mensajes.contenido, msg.contenido))
+        .where(and(eq(mensajes.chatId, msg.chatId), eq(mensajes.contenido, msg.contenido)))
         .limit(1)
       
       if (!existing) {

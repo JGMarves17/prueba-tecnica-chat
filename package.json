@@ -1,25 +1,22 @@
 {
-  "name": "prueba-tecnica",
+  "name": "chat-saas",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Chat SaaS - Backend (Hono + Neon) + Frontend (Next.js + React Query + Tailwind)",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "test:backend": "npm run test --workspace=backend",
+    "db:push": "npm run db:push --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend"
   },
-  "keywords": [],
+  "keywords": ["chat", "saas", "hono", "nextjs", "react-query", "tailwind"],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "next": "^16.3.4",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-query": "^3.39.3",
-    "tailwindcss": "^4.3.3"
-  }
+  "license": "MIT"
 }
