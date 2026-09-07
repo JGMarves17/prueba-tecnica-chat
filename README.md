@@ -6,17 +6,18 @@ SaaS de chat multi-tenant con backend en Cloudflare Workers + Neon Postgres y fr
 
 | Componente | URL | Estado |
 |------------|-----|--------|
-| **Backend API** | `https://chat-backend.<tu-subdominio>.workers.dev` | ⏳ Pendiente deploy |
-| **Frontend** | `https://chat-frontend.vercel.app` | ⏳ Pendiente deploy |
+| **Backend API** | https://chat-backend.gabrielmarves.workers.dev | ✅ En vivo |
+| **Frontend** | `pendiente` | ⏳ Desplegando |
 
-> **Nota**: Reemplazar con URLs reales tras deploy.
+**Abrir directamente:** [https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes](https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes)
 
 ## 📋 Chat de Prueba
 
 - **Chat ID**: `1`
 - **Teléfono**: `+34600123456`
 - **URL Frontend**: `https://chat-frontend.vercel.app/chats/1`
-- **API Directa**: `GET https://chat-backend.<tu-subdominio>.workers.dev/chats/1/mensajes`
+- **API Directa**: `GET https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes`
+- **Info del chat**: `GET https://chat-backend.gabrielmarves.workers.dev/chats/1`
 
 El chat incluye 8 mensajes de prueba (mezcla saliente/entrante) simulando una conversación real de soporte.
 El seed es idempotente: re-ejecutarlo no duplica empresa, chat ni mensajes.
@@ -197,7 +198,7 @@ cd backend
 wrangler login
 wrangler secret put DATABASE_URL  # Pegar tu Neon URL
 wrangler deploy
-# URL: https://chat-backend.<tu-subdominio>.workers.dev
+# URL: https://chat-backend.gabrielmarves.workers.dev
 ```
 
 ### Frontend → Vercel
@@ -206,7 +207,7 @@ cd frontend
 vercel login
 vercel --prod
 # En Vercel Dashboard > Settings > Environment Variables:
-# NEXT_PUBLIC_API_URL = https://chat-backend.<tu-subdominio>.workers.dev
+# NEXT_PUBLIC_API_URL = https://chat-backend.gabrielmarves.workers.dev
 ```
 
 ## 📝 Variables de Entorno
