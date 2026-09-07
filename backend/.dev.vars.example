@@ -1,0 +1,8 @@
+# Variables del Worker para desarrollo local con `wrangler dev`
+# Copiar a .dev.vars y completar:  cp .dev.vars.example .dev.vars
+#
+# wrangler dev inyecta estas variables en c.env (NO usa .env).
+# En producción el equivalente es:  wrangler secret put DATABASE_URL
+# .dev.vars está en .gitignore: nunca se commitea.
+
+DATABASE_URL=postgresql://usuario:password@ep-xxx.us-east-1.aws.neon.tech/dbname?sslmode=require

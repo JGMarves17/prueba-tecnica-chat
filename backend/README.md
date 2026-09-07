@@ -1,6 +1,6 @@
 # Chat Backend - Hono + Neon Postgres
 
-Backend para SaaS de chat con 3 endpoints CRUD, validaciones Zod, y despliegue en Cloudflare Workers.
+API para el SaaS de chat: 4 endpoints, validación con Zod y despliegue en Cloudflare Workers.
 
 ## Stack
 - **Runtime**: Cloudflare Workers (edge)
@@ -8,34 +8,62 @@ Backend para SaaS de chat con 3 endpoints CRUD, validaciones Zod, y despliegue e
 - **Base de datos**: Neon Postgres (serverless)
 - **ORM**: Drizzle ORM (type-safe)
 - **Validación**: Zod
-- **Testing**: Vitest
+- **Testing**: Vitest (15 tests)
 
 ## Estructura
 ```
 src/
-├── index.ts              # App Hono principal + CORS
+├── index.ts              # App Hono + CORS + middleware de BD + error handling
 ├── db/
-│   ├── index.ts          # Conexión Neon + Drizzle
+│   ├── index.ts          # getDb(env) — cliente Neon por request (c.env, no process.env)
 │   └── schema.ts         # Tablas: empresas, chats, mensajes
 ├── routes/
-│   └── chat.ts           # 3 endpoints: GET/POST/DELETE
-└── utils/
-    └── validations.ts    # Esquemas Zod
+│   └── chat.ts           # Endpoints
+├── utils/
+│   └── validations.ts    # Esquemas Zod
+└── seed.ts               # Datos de prueba (idempotente)
+```
+
+## Formato de respuesta
+
+Todas las respuestas siguen la convención del enunciado:
+
+```json
+// éxito
+{ "status": "success", "mensajes": [ ... ] }
+{ "status": "success", "mensaje": { ... } }
+{ "status": "success", "chat": { ... } }
+
+// error
+{ "status": "error", "message": "El contenido es requerido" }
 ```
 
 ## Endpoints
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/chats/:chatId/mensajes` | Listar mensajes (paginado) |
-| POST | `/api/chats/:chatId/mensajes` | Crear mensaje |
-| DELETE | `/api/mensajes/:id` | Eliminar mensaje |
+| GET | `/health` | Health check (no toca la BD) |
+| GET | `/chats/:chatId` | Info del chat (nombre del contacto + teléfono) |
+| GET | `/chats/:chatId/mensajes` | Listar mensajes, orden cronológico ASC (paginado) |
+| POST | `/chats/:chatId/mensajes` | Crear mensaje — el servidor fija `direccion: 'saliente'` |
+| DELETE | `/mensajes/:id` | Eliminar mensaje |
+
+> Sin prefijo `/api`: las rutas son exactamente las del enunciado.
 
 ### Ejemplos
 
-**GET /api/chats/1/mensajes?limit=20&offset=0**
+**GET /chats/1**
 ```json
 {
+  "status": "success",
+  "chat": { "id": 1, "empresaId": 1, "nombre": "Juan Pérez", "telefono": "+34600123456", "createdAt": "..." }
+}
+```
+
+**GET /chats/1/mensajes?limit=20&offset=0**
+```json
+{
+  "status": "success",
   "mensajes": [
     { "id": 1, "chatId": 1, "contenido": "Hola", "direccion": "saliente", "createdAt": "..." },
     { "id": 2, "chatId": 1, "contenido": "¿Cómo estás?", "direccion": "entrante", "createdAt": "..." }
@@ -46,103 +74,114 @@ src/
 }
 ```
 
-**POST /api/chats/1/mensajes**
+**POST /chats/1/mensajes**
 ```json
-// Request
-{ "contenido": "Nuevo mensaje", "direccion": "saliente" }
+// Request — el cliente NO manda direccion; si la manda, se ignora
+{ "contenido": "Nuevo mensaje" }
 
 // Response 201
-{ "mensaje": { "id": 3, "chatId": 1, "contenido": "Nuevo mensaje", "direccion": "saliente", "createdAt": "..." } }
+{
+  "status": "success",
+  "mensaje": { "id": 3, "chatId": 1, "contenido": "Nuevo mensaje", "direccion": "saliente", "createdAt": "..." }
+}
 ```
 
-**DELETE /api/mensajes/1**
+**DELETE /mensajes/1**
 ```json
 // Response 200
-{ "success": true, "mensaje": { "id": 1, ... } }
+{ "status": "success", "mensaje": { "id": 1, "...": "..." } }
 ```
+
+### Códigos de error
+
+| Situación | Código | Respuesta |
+|-----------|--------|-----------|
+| `:chatId` / `:id` no numérico | `400` | `{ "status": "error", "message": "chatId debe ser un número entero positivo" }` |
+| `contenido` vacío o solo espacios | `400` | `{ "status": "error", "message": "El contenido es requerido" }` |
+| Chat inexistente | `404` | `{ "status": "error", "message": "Chat no encontrado" }` |
+| Mensaje inexistente (DELETE) | `404` | `{ "status": "error", "message": "Mensaje no encontrado" }` |
+| Error inesperado | `500` | `{ "status": "error", "message": "Error interno del servidor" }` |
 
 ## Desarrollo Local
 
+Hacen falta **dos** archivos de entorno distintos, con el mismo `DATABASE_URL`:
+
+| Archivo | Lo lee | Para qué |
+|---------|--------|----------|
+| `.env` | Node (drizzle-kit, seed) | `db:push`, `db:generate`, `db:seed` |
+| `.dev.vars` | `wrangler dev` | Inyecta `c.env.DATABASE_URL` en el Worker |
+
+`wrangler dev` **no lee `.env`**: sin `.dev.vars`, todos los endpoints que tocan la BD responden `500`.
+
 ```bash
-# Instalar dependencias
 npm install
 
-# Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tu DATABASE_URL de Neon
+cp .env.example .env             # pegar tu DATABASE_URL de Neon
+cp .dev.vars.example .dev.vars   # pegar el mismo DATABASE_URL
 
-# Generar migraciones
-npm run db:generate
+npm run db:push                  # crea las tablas en Neon
+npm run db:seed                  # empresa + chat + 8 mensajes (idempotente)
+npm run dev                      # http://localhost:8787
+```
 
-# Aplicar migraciones a Neon
-npm run db:push
-
-# Iniciar servidor de desarrollo (Cloudflare Workers local)
-npm run dev
-# Disponible en http://localhost:8787
+Comprobación rápida:
+```bash
+curl http://localhost:8787/health
+curl http://localhost:8787/chats/1/mensajes
 ```
 
 ## Testing
 
 ```bash
-# Ejecutar pruebas
-npm test
-
-# Con coverage
-npm run test -- --coverage
+npm test              # 15 tests
+npm test -- --coverage
 ```
+
+Los tests mockean `getDb`, así que cubren routing, validaciones y contrato de respuesta — no la BD real.
 
 ## Despliegue a Cloudflare Workers
 
 ```bash
-# Login en Cloudflare
 wrangler login
-
-# Configurar DATABASE_URL en dashboard:
-# Cloudflare Dashboard > Workers > chat-backend > Settings > Variables
-
-# Desplegar
+wrangler secret put DATABASE_URL   # pegar la connection string de Neon
 npm run deploy
 # URL pública: https://chat-backend.<tu-subdominio>.workers.dev
 ```
 
-## Variables de Entorno (Cloudflare Dashboard)
-
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `DATABASE_URL` | Connection string de Neon Postgres | ✅ Sí |
+`DATABASE_URL` se guarda como **Secret**, nunca en `wrangler.toml`.
 
 ## CORS
 
-Configurado para aceptar:
-- `http://localhost:3000` (desarrollo local)
-- `https://*.vercel.app` (frontends en Vercel)
+Configurado en `src/index.ts` mediante función (no lista), para que el comodín funcione de verdad:
+- `http://localhost:3000` (desarrollo)
+- cualquier `*.vercel.app` (producción)
+
+Otros orígenes no reciben cabecera `Access-Control-Allow-Origin`.
 
 ## Esquema de Base de Datos
 
 ```sql
--- Empresas (tenants)
 CREATE TABLE empresas (
   id SERIAL PRIMARY KEY,
   nombre TEXT NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Chats (por empresa)
 CREATE TABLE chats (
   id SERIAL PRIMARY KEY,
-  empresa_id INTEGER REFERENCES empresas(id),
-  nombre TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
+  empresa_id INTEGER NOT NULL REFERENCES empresas(id),
+  nombre TEXT NOT NULL,      -- nombre del contacto
+  telefono TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Mensajes (por chat)
 CREATE TABLE mensajes (
   id SERIAL PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id),
+  chat_id INTEGER NOT NULL REFERENCES chats(id),
   contenido TEXT NOT NULL,
-  direccion TEXT NOT NULL CHECK (direccion IN ('saliente', 'entrante')),
-  created_at TIMESTAMP DEFAULT NOW()
+  direccion TEXT NOT NULL,   -- 'entrante' | 'saliente'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
+
+Las migraciones generadas por Drizzle están en `drizzle/`.

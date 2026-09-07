@@ -19,6 +19,7 @@ SaaS de chat multi-tenant con backend en Cloudflare Workers + Neon Postgres y fr
 - **API Directa**: `GET https://chat-backend.<tu-subdominio>.workers.dev/chats/1/mensajes`
 
 El chat incluye 8 mensajes de prueba (mezcla saliente/entrante) simulando una conversación real de soporte.
+El seed es idempotente: re-ejecutarlo no duplica empresa, chat ni mensajes.
 
 ## 🏗️ Arquitectura
 
@@ -40,7 +41,7 @@ El chat incluye 8 mensajes de prueba (mezcla saliente/entrante) simulando una co
 - **Base de datos**: Neon Postgres (Serverless)
 - **ORM**: Drizzle ORM (Type-safe)
 - **Validación**: Zod
-- **Testing**: Vitest (10 tests passing)
+- **Testing**: Vitest (15 tests passing)
 
 ### Frontend
 - **Framework**: Next.js 14 (App Router)
@@ -59,7 +60,7 @@ chat-saas/
 │   │   ├── routes/         # Endpoints chat
 │   │   ├── utils/          # Validaciones Zod
 │   │   └── index.ts        # App Hono + CORS + middleware
-│   ├── tests/              # Vitest (10 tests)
+│   ├── tests/              # Vitest (15 tests)
 │   ├── drizzle/            # Migraciones SQL
 │   ├── wrangler.toml       # Config Cloudflare
 │   └── package.json
@@ -81,6 +82,7 @@ chat-saas/
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
+| `GET` | `/chats/:chatId` | Info del chat (nombre del contacto + teléfono) |
 | `GET` | `/chats/:chatId/mensajes` | Listar mensajes (paginado) |
 | `POST` | `/chats/:chatId/mensajes` | Crear mensaje (direccion='saliente') |
 | `DELETE` | `/mensajes/:id` | Eliminar mensaje |
@@ -115,10 +117,11 @@ CREATE TABLE empresas (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Chats (con teléfono obligatorio)
+-- Chats (nombre del contacto + teléfono, ambos obligatorios)
 CREATE TABLE chats (
   id SERIAL PRIMARY KEY,
-  empresa_id INTEGER REFERENCES empresas(id),
+  empresa_id INTEGER NOT NULL REFERENCES empresas(id),
+  nombre TEXT NOT NULL,      -- nombre del contacto
   telefono TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -145,11 +148,19 @@ CREATE TABLE mensajes (
 ```bash
 cd backend
 npm install
+
+# 1) .env  -> lo leen drizzle-kit y el seed (scripts de Node)
 cp .env.example .env
 # Editar .env con tu DATABASE_URL de Neon
-npm run db:generate
-npm run db:push
-npm run db:seed      # Pobla empresa + chat 1 + mensajes
+
+# 2) .dev.vars -> lo lee `wrangler dev` para inyectar c.env en el Worker.
+#    Es un archivo APARTE: wrangler NO lee .env. Sin él, todos los
+#    endpoints que tocan la BD responden 500.
+cp .dev.vars.example .dev.vars
+# Pegar el mismo DATABASE_URL
+
+npm run db:push      # Crea las tablas en Neon
+npm run db:seed      # Pobla empresa + chat + 8 mensajes (idempotente)
 npm run dev          # http://localhost:8787
 ```
 
@@ -172,7 +183,7 @@ npm run dev          # http://localhost:3000
 
 ```bash
 # Backend
-cd backend && npm test        # 10 tests passing
+cd backend && npm test        # 15 tests passing
 
 # Frontend (pendiente)
 cd frontend && npm run type-check
@@ -200,10 +211,14 @@ vercel --prod
 
 ## 📝 Variables de Entorno
 
-### Backend (Cloudflare Dashboard > Workers > Settings > Variables)
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `DATABASE_URL` | Connection string Neon Postgres | ✅ Sí |
+### Backend
+| Dónde | Archivo / comando | Para qué |
+|-------|-------------------|----------|
+| Local (scripts Node) | `backend/.env` | `db:push`, `db:generate`, `db:seed` |
+| Local (Worker) | `backend/.dev.vars` | `wrangler dev` — inyecta `c.env.DATABASE_URL` |
+| Producción | `wrangler secret put DATABASE_URL` | Worker desplegado |
+
+Los tres necesitan el mismo valor: la connection string de Neon. `.env` y `.dev.vars` están en `.gitignore`.
 
 ### Frontend (Vercel Dashboard > Settings > Environment Variables)
 | Variable | Descripción | Requerida |
