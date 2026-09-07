@@ -24,11 +24,12 @@ export const empresas = pgTable('empresas', {
 /**
  * Tabla: chats
  * Cada chat pertenece a una empresa
- * Spec: id SERIAL PK, empresa_id INT REF empresas(id), telefono TEXT NOT NULL, created_at TIMESTAMPTZ
+ * Spec: id SERIAL PK, empresa_id INT REF empresas(id), nombre TEXT NOT NULL, telefono TEXT NOT NULL, created_at TIMESTAMPTZ
  */
 export const chats = pgTable('chats', {
   id: serial('id').primaryKey(),
   empresaId: integer('empresa_id').references(() => empresas.id).notNull(),
+  nombre: text('nombre').notNull(),
   telefono: text('telefono').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
