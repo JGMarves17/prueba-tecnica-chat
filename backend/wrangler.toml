@@ -1,0 +1,15 @@
+# Configuración Cloudflare Workers para Hono
+name = "chat-backend"
+main = "src/index.ts"
+compatibility_date = "2024-09-06"
+compatibility_flags = ["nodejs_compat"]
+
+# Variables de entorno (configurar en dashboard de Cloudflare)
+# DATABASE_URL se accede via c.env.DATABASE_URL en el código
+[vars]
+# NO pongas DATABASE_URL aquí, usa Secrets en el dashboard:
+# wrangler secret put DATABASE_URL
+
+# Límites (plan gratuito: 10ms CPU)
+[limits]
+cpu_ms = 10
