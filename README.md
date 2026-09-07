@@ -4,18 +4,24 @@ SaaS de chat multi-tenant con backend en Cloudflare Workers + Neon Postgres y fr
 
 ## 🚀 URLs de Producción
 
-| Componente | URL | Estado |
-|------------|-----|--------|
-| **Backend API** | https://chat-backend.gabrielmarves.workers.dev | ✅ En vivo |
-| **Frontend** | `pendiente` | ⏳ Desplegando |
+| Componente | URL |
+|------------|-----|
+| **Frontend** (Vercel) | https://chat-frontend-ochre-psi.vercel.app |
+| **Backend API** (Cloudflare Workers) | https://chat-backend.gabrielmarves.workers.dev |
+| **Repositorio** | https://github.com/JGMarves17/prueba-tecnica-chat |
 
-**Abrir directamente:** [https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes](https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes)
+### 👉 Abrir el chat de ejemplo
+
+**https://chat-frontend-ochre-psi.vercel.app/chats/1**
+
+O la API directamente: [https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes](https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes)
 
 ## 📋 Chat de Prueba
 
 - **Chat ID**: `1`
 - **Teléfono**: `+34600123456`
-- **URL Frontend**: `https://chat-frontend.vercel.app/chats/1`
+- **Nombre del contacto**: `Juan Pérez`
+- **URL Frontend**: https://chat-frontend-ochre-psi.vercel.app/chats/1
 - **API Directa**: `GET https://chat-backend.gabrielmarves.workers.dev/chats/1/mensajes`
 - **Info del chat**: `GET https://chat-backend.gabrielmarves.workers.dev/chats/1`
 
