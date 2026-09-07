@@ -5,11 +5,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "regions": ["iad1"],
-  "functions": {
-    "src/app/**/*.tsx": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -28,14 +23,5 @@
         }
       ]
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://chat-backend.tu-subdominio.workers.dev/api/:path*"
-    }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@api-url"
-  }
+  ]
 }
