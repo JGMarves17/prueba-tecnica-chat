@@ -95,6 +95,37 @@ describe('Chat Routes', () => {
     vi.resetAllMocks()
   })
 
+  describe('GET /chats/:chatId', () => {
+    it('debe retornar la info del chat con formato success', async () => {
+      const mockChat = { id: 1, empresaId: 1, nombre: 'Juan Pérez', telefono: '+34600123456', createdAt: new Date() }
+      mocks.mockSelect.mockReturnValueOnce(createChain([mockChat]))
+
+      const res = await testApp.request('/chats/1')
+      expect(res.status).toBe(200)
+      const json = await res.json() as { status: string; chat: { nombre: string; telefono: string } }
+      expect(json.status).toBe('success')
+      expect(json.chat.nombre).toBe('Juan Pérez')
+      expect(json.chat.telefono).toBe('+34600123456')
+    })
+
+    it('debe retornar 404 si el chat no existe', async () => {
+      mocks.mockSelect.mockReturnValueOnce(createChain([]))
+
+      const res = await testApp.request('/chats/999')
+      expect(res.status).toBe(404)
+      const json = await res.json() as { status: string; message: string }
+      expect(json.status).toBe('error')
+      expect(json.message).toBe('Chat no encontrado')
+    })
+
+    it('debe validar chatId como número', async () => {
+      const res = await testApp.request('/chats/abc')
+      expect(res.status).toBe(400)
+      const json = await res.json() as { status: string }
+      expect(json.status).toBe('error')
+    })
+  })
+
   describe('GET /chats/:chatId/mensajes', () => {
     it('debe retornar 404 si el chat no existe', async () => {
       // Mock: chat no encontrado (select -> from -> where -> limit)
@@ -165,6 +196,31 @@ describe('Chat Routes', () => {
       expect(json.mensaje.direccion).toBe('saliente') // Server fija 'saliente'
     })
 
+    it('debe ignorar la direccion enviada por el cliente y forzar saliente', async () => {
+      const nuevoMensaje = { id: 4, chatId: 1, contenido: 'Intento colar entrante', direccion: 'saliente', createdAt: new Date() }
+
+      mocks.mockSelect.mockReturnValueOnce(createChain([{ id: 1 }]))
+      mocks.mockInsert.mockReturnValueOnce({
+        values: mocks.mockValues.mockReturnValue({
+          returning: mocks.mockReturning.mockReturnValue(Promise.resolve([nuevoMensaje])),
+        }),
+      })
+
+      const res = await testApp.request('/chats/1/mensajes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contenido: 'Intento colar entrante', direccion: 'entrante' }),
+      })
+
+      expect(res.status).toBe(201)
+      // El servidor nunca pasa la direccion del cliente al insert
+      expect(mocks.mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({ direccion: 'saliente' })
+      )
+      const json = await res.json() as { mensaje: { direccion: string } }
+      expect(json.mensaje.direccion).toBe('saliente')
+    })
+
     it('debe rechazar contenido vacío', async () => {
       const res = await testApp.request('/chats/1/mensajes', {
         method: 'POST',
@@ -183,6 +239,18 @@ describe('Chat Routes', () => {
         body: JSON.stringify({ contenido: '   ' }),
       })
       expect(res.status).toBe(400)
+    })
+
+    it('debe devolver 400 (no 500) si el body no es JSON válido', async () => {
+      const res = await testApp.request('/chats/1/mensajes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"contenido": roto',
+      })
+      expect(res.status).toBe(400)
+      const json = await res.json() as { status: string; message: string }
+      expect(json.status).toBe('error')
+      expect(json.message).toBe('El body debe ser JSON válido')
     })
 
     it('debe rechazar contenido > 5000 chars', async () => {

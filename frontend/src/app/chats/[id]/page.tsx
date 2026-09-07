@@ -107,7 +107,10 @@ export default function ChatPage({ params }: ChatPageProps) {
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{chat?.nombre || `Chat #${chatId}`}</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{chat?.telefono || ''} · {mensajes.length} mensaje{mensajes.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {chat?.telefono && <span>{chat.telefono} &middot; </span>}
+            {mensajes.length} mensaje{mensajes.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <button
           onClick={() => refetch()}
@@ -147,7 +150,7 @@ export default function ChatPage({ params }: ChatPageProps) {
       </main>
 
       {/* Input para enviar mensajes - pasa sendMutation unificado */}
-      <ChatInput chatId={chatId} sendMutation={sendMutation} />
+      <ChatInput sendMutation={sendMutation} />
     </div>
   )
 }

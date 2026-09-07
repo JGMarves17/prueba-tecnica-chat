@@ -1,6 +1,6 @@
 # Chat Frontend - Next.js + React Query + Tailwind
 
-Frontend para SaaS de chat con interfaz moderna, dark mode, y gestión de estado optimista.
+Interfaz de conversación estilo WhatsApp para el CRM: listar, enviar y eliminar mensajes.
 
 ## Stack
 - **Framework**: Next.js 14 (App Router)
@@ -13,102 +13,89 @@ Frontend para SaaS de chat con interfaz moderna, dark mode, y gestión de estado
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root layout + QueryClientProvider
-│   ├── globals.css         # Tailwind + estilos globales
-│   └── chats/[id]/page.tsx # Página de chat individual
+│   ├── layout.tsx           # Root layout (server component) + metadata
+│   ├── page.tsx             # `/` redirige a /chats/1
+│   ├── globals.css          # Tailwind + estilos globales
+│   └── chats/[id]/page.tsx  # Pantalla de conversación
 ├── components/
-│   ├── ChatMessage.tsx     # Burbuja de mensaje (saliente/entrante)
-│   └── ChatInput.tsx       # Formulario de envío
+│   ├── Providers.tsx        # 'use client' — QueryClientProvider + devtools
+│   ├── ChatMessage.tsx      # Burbuja (saliente/entrante) + borrar en hover
+│   └── ChatInput.tsx        # Formulario de envío (recibe la mutación del padre)
 ├── lib/
-│   ├── api.ts              # Cliente API tipado
-│   ├── query.ts            # Hooks React Query (useMensajes, useSendMensaje, useDeleteMensaje)
-│   └── utils.ts            # Utilidades (cn, formatDate)
+│   ├── api.ts               # Cliente API tipado
+│   ├── query.ts             # Hooks: useChat, useMensajes, useSendMensaje, useDeleteMensaje
+│   └── utils.ts             # cn(), formatDate()
 └── types/
-    └── index.ts            # Tipos compartidos con backend
+    └── index.ts             # Tipos del contrato de la API
 ```
 
 ## Características
 
-### Chat en tiempo real (simulado)
-- **Optimistic updates**: Mensajes aparecen instantáneamente
-- **Auto-scroll**: Siempre al último mensaje
-- **Estados**: loading, error, empty, success
-
-### Accesibilidad
-- ARIA labels y roles semánticos
-- Focus visible management
-- Keyboard navigation (Enter para enviar)
-- Screen reader support (aria-live)
-
-### Dark Mode
-- `class` strategy en Tailwind
-- Persistencia en localStorage (opcional)
-- Respeta `prefers-color-scheme`
-
-### Validaciones
-- Cliente: contenido no vacío, max 5000 chars
-- Servidor: Zod en backend (fuente de verdad)
+- **Optimistic updates** al enviar y al borrar, con rollback si el servidor falla.
+- **Estados explícitos**: loading, empty ("Aún no hay mensajes"), error con botón de reintento, y chatId inválido.
+- **Borrado con confirmación**, botón visible al pasar el ratón por la burbuja (`group-hover`).
+- **Auto-scroll** al último mensaje.
+- **Validación en cliente**: no se envían mensajes vacíos ni solo espacios; si el envío falla se restaura el texto.
+- **Accesibilidad**: `role="log"` + `aria-live="polite"` en la lista, `aria-label` en los controles, envío con Enter (Shift+Enter para salto de línea), focus visible.
+- **Dark mode** por `prefers-color-scheme` vía clases `dark:` de Tailwind.
 
 ## Desarrollo Local
 
 ```bash
-# Instalar dependencias
 npm install
 
-# Configurar variables
 cp .env.example .env.local
-# Editar .env.local con NEXT_PUBLIC_API_URL
+# NEXT_PUBLIC_API_URL=http://localhost:8787   (sin /api y sin barra final)
 
-# Servidor de desarrollo
-npm run dev
-# Abre http://localhost:3000
+npm run dev          # http://localhost:3000
 ```
+
+Con el backend corriendo en `localhost:8787`, abrir `http://localhost:3000/chats/1`.
 
 ## Variables de Entorno
 
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | URL base del backend API | `http://localhost:8787/api` |
+| `NEXT_PUBLIC_API_URL` | URL base del backend, **sin** `/api` ni barra final | `http://localhost:8787` |
+
+La URL nunca está hardcodeada: `src/lib/api.ts` la lee de `process.env.NEXT_PUBLIC_API_URL`.
 
 ## Despliegue a Vercel
 
 ```bash
-# Login
 vercel login
-
-# Deploy (configura NEXT_PUBLIC_API_URL en dashboard)
 vercel --prod
 ```
 
-### Configuración en Vercel Dashboard
-1. **Settings > Environment Variables**:
-   - `NEXT_PUBLIC_API_URL` = `https://chat-backend.tu-subdominio.workers.dev/api`
+En **Vercel Dashboard > Settings > Environment Variables**:
+- `NEXT_PUBLIC_API_URL` = `https://chat-backend.<tu-subdominio>.workers.dev`
 
-2. **Functions**: Max duration 30s (configurado en vercel.json)
+> Al ser `NEXT_PUBLIC_*` se inyecta en build time: tras cambiarla hay que **redesplegar**.
 
-## Scripts Disponibles
+## Scripts
 
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Servidor desarrollo (Turbopack) |
-| `npm run build` | Build producción |
-| `npm run start` | Servidor producción |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run start` | Servidor de producción |
 | `npm run lint` | ESLint |
-| `npm run type-check` | TypeScript check |
+| `npm run type-check` | `tsc --noEmit` |
 
-## API Integration
-
-El frontend consume 3 endpoints del backend:
+## Integración con la API
 
 | Método | Endpoint | Hook |
 |--------|----------|------|
-| GET | `/api/chats/:chatId/mensajes` | `useMensajes(chatId)` |
-| POST | `/api/chats/:chatId/mensajes` | `useSendMensaje(chatId)` |
-| DELETE | `/api/mensajes/:id` | `useDeleteMensaje(chatId)` |
+| GET | `/chats/:chatId` | `useChat(chatId)` |
+| GET | `/chats/:chatId/mensajes` | `useMensajes(chatId)` |
+| POST | `/chats/:chatId/mensajes` | `useSendMensaje(chatId)` |
+| DELETE | `/mensajes/:id` | `useDeleteMensaje(chatId)` |
 
-## Tipos Compartidos
+Todas las respuestas se validan contra el contrato `{ status: "success" \| "error" }` en `handleResponse()`.
 
-Los tipos en `src/types/index.ts` deben mantenerse sincronizados con `backend/src/db/schema.ts`:
+## Tipos
+
+`src/types/index.ts` refleja el contrato de la API y debe mantenerse en sync con `backend/src/db/schema.ts`:
 
 ```typescript
 type DireccionMensaje = 'saliente' | 'entrante'
@@ -122,26 +109,6 @@ interface Mensaje {
 }
 ```
 
-## Testing (pendiente)
+## Tests
 
-```bash
-# Unit tests con Vitest + React Testing Library
-npm test
-
-# E2E con Playwright
-npx playwright test
-```
-
-## Performance
-
-- **React Query**: Cache 30s, deduping, background refetch
-- **Next.js**: Server Components por defecto, Client Components solo donde necesario
-- **Tailwind**: JIT compilation, solo CSS usado
-- **Fonts**: Inter con `font-display: swap`
-
-## Browser Support
-
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 14+
-- Mobile Safari/Chrome
+No hay tests de UI en esta entrega; la cobertura automatizada está en el backend (`cd ../backend && npm test`, 15 tests). La verificación del frontend es `npm run type-check` + `npm run build`.
