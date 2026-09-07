@@ -5,7 +5,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, apiKeys } from '@/lib/api'
-import type { Mensaje, CreateMensajeInput, MensajesResponse, CreateMensajeResponse, DeleteMensajeResponse } from '@/types'
+import type { Mensaje, CreateMensajeInput, MensajesResponse, CreateMensajeResponse, DeleteMensajeResponse, ChatResponse } from '@/types'
 
 /**
  * Hook para obtener mensajes de un chat
@@ -13,15 +13,13 @@ import type { Mensaje, CreateMensajeInput, MensajesResponse, CreateMensajeRespon
  * - Refetch en foco de ventana (configurable)
  * - Paginación soportada
  */
-export function useMensajes(chatId: number, limit = 50, offset = 0) {
+export function useMensajes(chatId: number, limit = 50, offset = 0, enabled = true) {
   return useQuery({
     queryKey: apiKeys.mensajes(chatId),
     queryFn: () => api.getMensajes(chatId, limit, offset),
-    enabled: !!chatId,
+    enabled: enabled && !!chatId,
     staleTime: 30_000, // 30 segundos
     refetchOnWindowFocus: false,
-    // Extraer solo los datos necesarios del response SPEC
-    select: (data: MensajesResponse) => data,
   })
 }
 
@@ -112,5 +110,20 @@ export function useDeleteMensaje(chatId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: apiKeys.mensajes(chatId) })
     },
+  })
+}
+
+/**
+ * Hook para obtener info de un chat
+ * - Cache automático por chatId
+ */
+export function useChat(chatId: number, enabled = true) {
+  return useQuery({
+    queryKey: apiKeys.chat(chatId),
+    queryFn: () => api.getChat(chatId),
+    enabled: enabled && !!chatId,
+    staleTime: 60_000, // 1 minuto
+    refetchOnWindowFocus: false,
+    select: (data: ChatResponse) => data.chat,
   })
 }
