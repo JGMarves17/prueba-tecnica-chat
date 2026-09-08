@@ -7,7 +7,16 @@
  */
 import type { Mensaje, MensajesResponse, CreateMensajeInput, CreateMensajeResponse, DeleteMensajeResponse, ApiError, Chat, ChatResponse } from '@/types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'
+const API_BASE = (() => {
+  const url = process.env.NEXT_PUBLIC_API_URL
+  if (!url) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('NEXT_PUBLIC_API_URL no configurada. Configúrala en Vercel Dashboard > Settings > Environment Variables.')
+    }
+    return 'http://localhost:8787'
+  }
+  return url
+})()
 
 /**
  * Helper para manejar respuestas de la API con formato SPEC

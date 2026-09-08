@@ -58,7 +58,7 @@ Con el backend corriendo en `localhost:8787`, abrir `http://localhost:3000/chats
 |----------|-------------|---------|
 | `NEXT_PUBLIC_API_URL` | URL base del backend, **sin** `/api` ni barra final | `http://localhost:8787` |
 
-La URL nunca está hardcodeada: `src/lib/api.ts` la lee de `process.env.NEXT_PUBLIC_API_URL`.
+La URL se lee de `process.env.NEXT_PUBLIC_API_URL` con fallback a `http://localhost:8787` en desarrollo (`src/lib/api.ts:10`).
 
 ## Despliegue a Vercel
 

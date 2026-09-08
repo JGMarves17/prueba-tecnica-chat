@@ -4,14 +4,14 @@
  * Página de chat individual
  * - Lista de mensajes con useQuery (React Query)
  * - Envío de mensajes con useMutation + optimistic updates
- * - Eliminar mensaje con confirmación
+ * - Eliminar mensaje con confirmación + manejo de errores
  * - Auto-scroll al final
  * - Estados: loading, error, empty
  * - Dark mode support
  * 
  * Next 14: params es objeto plano { id: string }, NO Promise
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMensajes, useSendMensaje, useDeleteMensaje, useChat } from '@/lib/query'
 import { ChatMessage } from '@/components/ChatMessage'
 import { ChatInput } from '@/components/ChatInput'
@@ -23,11 +23,13 @@ interface ChatPageProps {
 }
 
 export default function ChatPage({ params }: ChatPageProps) {
-  const chatId = parseInt(params.id, 10)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  // Validar chatId: parseInt trunca "1abc" -> 1, así que validamos formato exacto
+  const rawId = params.id
+  const isValidChatId = /^\d+$/.test(rawId) && parseInt(rawId, 10) > 0
+  const chatId = isValidChatId ? parseInt(rawId, 10) : 0
 
-  // Validar chatId: si no es número válido, mostrar error 400
-  const isValidChatId = !isNaN(chatId) && chatId > 0
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const { data, isLoading, isError, error, refetch } = useMensajes(chatId, 50, 0, isValidChatId)
   const { data: chat, isLoading: chatLoading } = useChat(chatId, isValidChatId)
@@ -46,11 +48,19 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   const handleDelete = (id: number) => {
     if (confirm('¿Eliminar este mensaje?')) {
-      deleteMutation.mutate(id)
+      setDeleteError(null)
+      deleteMutation.mutate(id, {
+        onError: (error) => {
+          setDeleteError(error.message || 'No se pudo eliminar el mensaje')
+        },
+        onSuccess: () => {
+          setDeleteError(null)
+        }
+      })
     }
   }
 
-  // Chat ID inválido (ej: /chats/abc)
+  // Chat ID inválido (ej: /chats/abc, /chats/0, /chats/1abc)
   if (!isValidChatId) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -59,7 +69,7 @@ export default function ChatPage({ params }: ChatPageProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <h2 className="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Chat inválido</h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">El ID del chat debe ser un número positivo</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">El ID del chat debe ser un número positivo sin ceros a la izquierda</p>
         </div>
       </div>
     )
@@ -77,14 +87,19 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   if (isError) {
+    // Manejar "Failed to fetch" y otros errores de red
+    const errorMessage = error instanceof TypeError && error.message === 'Failed to fetch'
+      ? 'No se puede conectar con el servidor. Verifica que el backend esté corriendo.'
+      : (error as Error)?.message || 'No se pudieron cargar los mensajes'
+
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center p-8">
           <svg className="mx-auto h-16 w-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77-1.333.192 3 1.732 3z" />
           </svg>
           <h2 className="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Error al cargar</h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">{(error as Error)?.message || 'No se pudieron cargar los mensajes'}</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">{errorMessage}</p>
           <button
             onClick={() => refetch()}
             className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600"
@@ -148,6 +163,13 @@ export default function ChatPage({ params }: ChatPageProps) {
           </>
         )}
       </main>
+
+      {/* Error de borrado (toast inline) */}
+      {deleteError && (
+        <div className="mx-4 mb-2 px-4 py-2 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg" role="alert">
+          {deleteError}
+        </div>
+      )}
 
       {/* Input para enviar mensajes - pasa sendMutation unificado */}
       <ChatInput sendMutation={sendMutation} />

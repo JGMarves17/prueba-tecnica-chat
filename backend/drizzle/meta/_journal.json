@@ -15,6 +15,13 @@
       "when": 1788745497405,
       "tag": "0001_icy_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788848647688,
+      "tag": "0002_bright_red_wolf",
+      "breakpoints": true
     }
   ]
 }
