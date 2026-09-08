@@ -134,7 +134,7 @@ curl http://localhost:8787/chats/1/mensajes
 
 ```bash
 npm test              # 15 tests
-npm test -- --coverage
+npm run test:coverage   # 98% de cobertura en las rutas
 ```
 
 Los tests mockean `getDb`, así que cubren routing, validaciones y contrato de respuesta — no la BD real.

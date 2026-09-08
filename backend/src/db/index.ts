@@ -16,7 +16,7 @@ export type DrizzleDb = NeonHttpDatabase<typeof schema>
 
 /**
  * Crea una instancia de Drizzle usando el DATABASE_URL del binding de Cloudflare
- * Se llama dentro de cada handler para tener acceso a c.env
+ * Se llama desde un middleware global (index.ts) para inyectar la BD en c.var
  */
 export function getDb(env: Env): DrizzleDb {
   const sql = neon(env.DATABASE_URL)

@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS "mensajes_chat_created_idx";--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "mensajes_chat_created_idx" ON "mensajes" USING btree ("chat_id","created_at","id");

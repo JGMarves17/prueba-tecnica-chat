@@ -1,6 +1,6 @@
 # Chat SaaS - Prueba Técnica
 
-SaaS de chat multi-tenant con backend en Cloudflare Workers + Neon Postgres y frontend en Vercel + Next.js.
+SaaS de chat con backend en Cloudflare Workers + Neon Postgres y frontend en Vercel + Next.js.
 
 ## 🚀 URLs de Producción
 
@@ -136,10 +136,10 @@ CREATE TABLE chats (
 -- Mensajes
 CREATE TABLE mensajes (
   id SERIAL PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id),
+  chat_id INTEGER NOT NULL REFERENCES chats(id),
   contenido TEXT NOT NULL,
-  direccion TEXT NOT NULL CHECK (direccion IN ('saliente', 'entrante')),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  direccion TEXT NOT NULL, -- 'saliente' | 'entrante' (validado en API)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 

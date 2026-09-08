@@ -11,7 +11,17 @@ function makeQueryClient() {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: 1,
+        // No reintentar 404 (no van a cambiar) ni 400 (error del cliente)
+        retry: (failureCount, error) => {
+          if (error instanceof Error && (error.message.includes('404') || error.message.includes('400'))) {
+            return false
+          }
+          return failureCount < 1
+        },
+      },
+      mutations: {
+        // No reintentar mutaciones automáticamente
+        retry: 0,
       },
     },
   })
@@ -29,7 +39,9 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       {mounted && process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} />
+        // buttonPosition bottom-left: por defecto va abajo a la derecha,
+        // justo encima del boton Enviar, y lo hace inclicable en desarrollo.
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       )}
     </QueryClientProvider>
   )

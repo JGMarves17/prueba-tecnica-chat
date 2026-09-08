@@ -10,7 +10,7 @@ import type { Mensaje, CreateMensajeInput, MensajesResponse, CreateMensajeRespon
 /**
  * Hook para obtener mensajes de un chat
  * - Cache automático por chatId
- * - Refetch en foco de ventana (configurable)
+ * - Refetch en foco de ventana: deshabilitado (refetchOnWindowFocus: false)
  * - Paginación soportada
  */
 export function useMensajes(chatId: number, limit = 50, offset = 0, enabled = true) {

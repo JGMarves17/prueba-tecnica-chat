@@ -3,6 +3,7 @@
  * Ejecutar con: npm test
  * 
  * Cubre:
+ * - GET /chats/:chatId
  * - GET /chats/:chatId/mensajes
  * - POST /chats/:chatId/mensajes
  * - DELETE /mensajes/:id
