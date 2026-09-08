@@ -7,16 +7,26 @@
  */
 import type { Mensaje, MensajesResponse, CreateMensajeInput, CreateMensajeResponse, DeleteMensajeResponse, ApiError, Chat, ChatResponse } from '@/types'
 
-const API_BASE = (() => {
-  const url = process.env.NEXT_PUBLIC_API_URL
-  if (!url) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('NEXT_PUBLIC_API_URL no configurada. Configúrala en Vercel Dashboard > Settings > Environment Variables.')
-    }
-    return 'http://localhost:8787'
+/**
+ * En desarrollo cae a localhost. En producción no hay valor razonable por
+ * defecto, así que se deja vacío y cada llamada falla con un mensaje claro.
+ *
+ * NO se lanza a nivel de módulo: hacerlo tumba el bundle del cliente entero
+ * y el usuario ve una página en blanco. Lanzando dentro de cada petición, el
+ * error viaja por React Query y se muestra en la pantalla de error normal.
+ */
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
+
+function baseUrl(): string {
+  if (!API_BASE) {
+    throw new Error(
+      'La URL de la API no está configurada. Define NEXT_PUBLIC_API_URL en las variables de entorno del despliegue y vuelve a desplegar.'
+    )
   }
-  return url
-})()
+  return API_BASE
+}
 
 /**
  * Helper para manejar respuestas de la API con formato SPEC
@@ -56,7 +66,7 @@ export const api = {
    * GET /chats/:chatId/mensajes
    */
   getMensajes: async (chatId: number, limit = 50, offset = 0): Promise<MensajesResponse> => {
-    const response = await fetch(`${API_BASE}/chats/${chatId}/mensajes?limit=${limit}&offset=${offset}`, {
+    const response = await fetch(`${baseUrl()}/chats/${chatId}/mensajes?limit=${limit}&offset=${offset}`, {
       headers: { 'Content-Type': 'application/json' },
     })
     return handleResponse<MensajesResponse>(response)
@@ -68,7 +78,7 @@ export const api = {
    * Body: { contenido: string } -- direccion la fija el servidor
    */
   sendMensaje: async (chatId: number, data: CreateMensajeInput): Promise<CreateMensajeResponse> => {
-    const response = await fetch(`${API_BASE}/chats/${chatId}/mensajes`, {
+    const response = await fetch(`${baseUrl()}/chats/${chatId}/mensajes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -81,7 +91,7 @@ export const api = {
    * DELETE /mensajes/:id
    */
   deleteMensaje: async (id: number): Promise<DeleteMensajeResponse> => {
-    const response = await fetch(`${API_BASE}/mensajes/${id}`, {
+    const response = await fetch(`${baseUrl()}/mensajes/${id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -93,7 +103,7 @@ export const api = {
    * GET /chats/:chatId
    */
   getChat: async (chatId: number): Promise<ChatResponse> => {
-    const response = await fetch(`${API_BASE}/chats/${chatId}`, {
+    const response = await fetch(`${baseUrl()}/chats/${chatId}`, {
       headers: { 'Content-Type': 'application/json' },
     })
     return handleResponse<ChatResponse>(response)

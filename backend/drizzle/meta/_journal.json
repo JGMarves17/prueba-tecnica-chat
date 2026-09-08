@@ -22,6 +22,20 @@
       "when": 1788848647688,
       "tag": "0002_bright_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788856968975,
+      "tag": "0003_direccion_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788857016740,
+      "tag": "0004_narrow_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

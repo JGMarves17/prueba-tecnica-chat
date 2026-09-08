@@ -42,8 +42,13 @@ export const chats = pgTable('chats', {
  * Spec: id SERIAL PK, chat_id INT REF chats(id), contenido TEXT NOT NULL, direccion TEXT NOT NULL, created_at TIMESTAMPTZ
  * 
  * Índices y constraints:
- * - Índice compuesto (chat_id, created_at) para paginación eficiente
- * - Constraint CHECK en BD para direccion (defensa en profundidad)
+ * - Índice compuesto (chat_id, created_at, id) para paginación eficiente.
+ *   Incluye id porque el ORDER BY desempata por id cuando created_at coincide.
+ * - Constraint CHECK en BD para direccion (defensa en profundidad).
+ *   OJO: drizzle-kit 0.24 ignora los check() al generar migraciones (soporte
+ *   desde 0.25), asi que la constraint se aplica con drizzle/0003, escrita
+ *   a mano. El check() de abajo documenta la intencion y quedara operativo
+ *   para generate() al subir drizzle-kit.
  */
 export const mensajes = pgTable('mensajes', {
   id: serial('id').primaryKey(),
@@ -53,8 +58,8 @@ export const mensajes = pgTable('mensajes', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   // Índice compuesto para paginación eficiente: WHERE chat_id = ? ORDER BY created_at ASC
-  chatCreatedIdx: index('mensajes_chat_created_idx').on(table.chatId, table.createdAt),
-  // Constraint CHECK para direccion (defensa en profundidad, también validado en API)
+  chatCreatedIdx: index('mensajes_chat_created_idx').on(table.chatId, table.createdAt, table.id),
+  // Constraint CHECK (aplicada por drizzle/0003_direccion_check.sql, no por generate)
   direccionCheck: check('direccion_check', sql`direccion IN ('saliente', 'entrante')`),
 }))
 

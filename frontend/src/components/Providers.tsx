@@ -39,10 +39,9 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       {mounted && process.env.NODE_ENV === 'development' && (
-        // Posicionar devtools en bottom-right para no tapar el input de enviar
-        <ReactQueryDevtools 
-          initialIsOpen={false} 
-        />
+        // buttonPosition bottom-left: por defecto va abajo a la derecha,
+        // justo encima del boton Enviar, y lo hace inclicable en desarrollo.
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       )}
     </QueryClientProvider>
   )
