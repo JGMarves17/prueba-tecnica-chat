@@ -31,13 +31,13 @@ El seed es idempotente: re-ejecutarlo no duplica empresa, chat ni mensajes.
 ## 🏗️ Arquitectura
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+┌─────────────────┐      ┌─────────────────┐     ┌─────────────────┐
 │   Frontend      │────▶│   Backend       │────▶│   Database      │
-│   (Vercel)      │     │   (Cloudflare)  │     │   (Neon)        │
-│   Next.js 14    │     │   Hono + TS     │     │   Postgres      │
-│   React Query   │     │   Drizzle ORM   │     │   Serverless    │
-│   Tailwind CSS  │     │   Zod Valid.    │     │                 │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+│   (Vercel)      │      │   (Cloudflare)  │     │   (Neon)        │
+│   Next.js 14    │      │   Hono + TS     │     │   Postgres      │
+│   React Query   │      │   Drizzle ORM   │     │   Serverless    │
+│   Tailwind CSS  │      │   Zod Valid.    │     │                 │
+└─────────────────┘      └─────────────────┘     └─────────────────┘
 ```
 
 ## 🛠️ Stack Tecnológico
