@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 /**
  * Página raíz - Redirige al chat de prueba
+ * Client component necesario para useRouter
  */
 export default function HomePage() {
   const router = useRouter()

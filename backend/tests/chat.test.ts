@@ -18,7 +18,11 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { Hono } from 'hono'
 import type { DrizzleDb } from '../src/db'
 
-// Mocks globales definidos ANTES de vi.mock (hoisted)
+// ============================================
+// MOCKS GLOBALES DEFINIDOS ANTES DE vi.mock (HOISTED)
+// ============================================
+// vi.hoisted() ejecuta la función ANTES de vi.mock, evitando "temporal dead zone"
+// Permite usar las funciones mock en el factory de vi.mock
 const { mockSelect, mockFrom, mockWhere, mockLimit, mockOffset, mockOrderBy, mockInsert, mockValues, mockReturning, mockDelete, mockCount } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockFrom: vi.fn(),
@@ -33,7 +37,9 @@ const { mockSelect, mockFrom, mockWhere, mockLimit, mockOffset, mockOrderBy, moc
   mockCount: vi.fn(),
 }))
 
-// Mock de la base de datos - simula DrizzleDb
+// ============================================
+// MOCK DE LA BASE DE DATOS - SIMULA DrizzleDb
+// ============================================
 vi.mock('../src/db', () => ({
   getDb: vi.fn(() => ({
     select: mockSelect,
@@ -48,7 +54,9 @@ vi.mock('../src/db', () => ({
 
 import chatRoutes from '../src/routes/chat'
 
-// App de prueba montando solo las rutas de chat (sin /api prefix)
+// ============================================
+// APP DE PRUEBA MONTANDO SOLO LAS RUTAS DE CHAT
+// ============================================
 // Necesita el middleware que inyecta db en el contexto
 const testApp = new Hono<{ Bindings: { DATABASE_URL: string }; Variables: { db: DrizzleDb } }>()
 testApp.use('*', async (c, next) => {
@@ -74,7 +82,14 @@ const mocks = {
   mockCount,
 }
 
-// Crear un builder encadenable que soporta cualquier orden de métodos
+// ============================================
+// CREAR UN BUILDER ENCADENABLE QUE SOPORTA CUALQUIER ORDEN DE MÉTODOS
+// ============================================
+// Cada método del mock devuelve el mismo objeto (mockReturnThis), así que el
+// doble acepta from/where/orderBy/limit/offset en cualquier orden. Eso es una
+// comodidad del MOCK: no hay que replicar el orden exacto de cada consulta.
+// Drizzle real sí impone orden en sus tipos.
+// then() hace que la cadena se pueda esperar con await y resuelva con finalResult.
 const createChain = (finalResult: any) => {
   const chain = {
     from: vi.fn().mockReturnThis(),
@@ -96,6 +111,9 @@ describe('Chat Routes', () => {
     vi.resetAllMocks()
   })
 
+  // ============================================
+  // TESTS: GET /chats/:chatId
+  // ============================================
   describe('GET /chats/:chatId', () => {
     it('debe retornar la info del chat con formato success', async () => {
       const mockChat = { id: 1, empresaId: 1, nombre: 'Juan Pérez', telefono: '+34600123456', createdAt: new Date() }
@@ -127,6 +145,9 @@ describe('Chat Routes', () => {
     })
   })
 
+  // ============================================
+  // TESTS: GET /chats/:chatId/mensajes
+  // ============================================
   describe('GET /chats/:chatId/mensajes', () => {
     it('debe retornar 404 si el chat no existe', async () => {
       // Mock: chat no encontrado (select -> from -> where -> limit)
@@ -170,6 +191,9 @@ describe('Chat Routes', () => {
     })
   })
 
+  // ============================================
+  // TESTS: POST /chats/:chatId/mensajes
+  // ============================================
   describe('POST /chats/:chatId/mensajes', () => {
     it('debe crear mensaje válido con direccion saliente', async () => {
       const nuevoMensaje = { id: 3, chatId: 1, contenido: 'Nuevo mensaje', direccion: 'saliente', createdAt: new Date() }
@@ -264,6 +288,9 @@ describe('Chat Routes', () => {
     })
   })
 
+  // ============================================
+  // TESTS: DELETE /mensajes/:id
+  // ============================================
   describe('DELETE /mensajes/:id', () => {
     it('debe eliminar mensaje existente', async () => {
       const mensajeEliminado = { id: 1, chatId: 1, contenido: 'Hola', direccion: 'saliente', createdAt: new Date() }

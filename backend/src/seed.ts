@@ -1,14 +1,14 @@
 /**
  * Seed script para poblar la base de datos con datos de prueba
  * Ejecutar con: npm run db:seed (requiere DATABASE_URL en .env)
- *
+ * 
  * Idempotente de verdad: busca antes de insertar (select-then-insert).
  * No usa onConflictDoNothing porque el schema del enunciado no define
  * ninguna constraint UNIQUE sobre la que pudiera dispararse.
- *
+ * 
  * Crea:
  * - 1 Empresa: "AuthCode Demo"
- * - 1 Chat: nombre "Juan Perez", telefono "+34600123456"
+ * - 1 Chat: nombre "Juan Pérez", telefono "+34600123456"
  * - 8 mensajes mixtos: saliente (negocio) + entrante (cliente)
  */
 import { drizzle } from 'drizzle-orm/neon-http'
@@ -16,11 +16,17 @@ import { neon } from '@neondatabase/serverless'
 import { empresas, chats, mensajes } from './db/schema'
 import { eq, and } from 'drizzle-orm'
 
+// ============================================
+// CONSTANTES DE DATOS DE PRUEBA
+// ============================================
 const EMPRESA_NOMBRE = 'AuthCode Demo'
 const CHAT_TELEFONO = '+34600123456'
 const CHAT_NOMBRE = 'Juan Pérez'
 
 async function seed() {
+  // ============================================
+  // VALIDACIÓN DE VARIABLES DE ENTORNO
+  // ============================================
   const databaseUrl = process.env.DATABASE_URL
 
   if (!databaseUrl) {
@@ -31,10 +37,13 @@ async function seed() {
 
   console.log('🌱 Conectando a Neon...')
   const sql = neon(databaseUrl)
+  // Crea instancia de Drizzle solo con las tablas necesarias para el seed
   const db = drizzle(sql, { schema: { empresas, chats, mensajes } })
 
   try {
-    // 1. Empresa (idempotente: buscar antes de insertar)
+    // ============================================
+    // 1. EMPRESA (IDEMPOTENTE: BUSCAR ANTES DE INSERTAR)
+    // ============================================
     console.log('📦 Empresa...')
     let [empresa] = await db
       .select()
@@ -45,12 +54,16 @@ async function seed() {
     if (empresa) {
       console.log(`ℹ️  Empresa ya existe: ${EMPRESA_NOMBRE} (id: ${empresa.id})`)
     } else {
+      // Insert si no existe
       ;[empresa] = await db.insert(empresas).values({ nombre: EMPRESA_NOMBRE }).returning()
       console.log(`✅ Empresa creada: ${EMPRESA_NOMBRE} (id: ${empresa.id})`)
     }
 
-    // 2. Chat con nombre de contacto y telefono (idempotente)
+    // ============================================
+    // 2. CHAT CON NOMBRE Y TELÉFONO (IDEMPOTENTE)
+    // ============================================
     console.log('💬 Chat...')
+    // Busca por empresaId + telefono (combinación única de negocio)
     let [chat] = await db
       .select()
       .from(chats)
@@ -69,7 +82,9 @@ async function seed() {
 
     const chatId = chat.id
 
-    // 3. Mensajes mixtos (idempotente: solo inserta los que falten)
+    // ============================================
+    // 3. MENSAJES MIXTOS (IDEMPOTENTE: SOLO INSERTA LOS QUE FALTEN)
+    // ============================================
     console.log('📨 Mensajes...')
     const mensajesData = [
       { chatId, contenido: '¡Hola! Bienvenido a nuestro soporte. ¿En qué podemos ayudarte?', direccion: 'saliente' as const },
@@ -84,6 +99,7 @@ async function seed() {
 
     let creados = 0
     for (const msg of mensajesData) {
+      // Verifica si ya existe (mismo chatId + mismo contenido)
       const [existing] = await db
         .select()
         .from(mensajes)

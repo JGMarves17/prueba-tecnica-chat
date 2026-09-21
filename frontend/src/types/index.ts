@@ -23,7 +23,10 @@ export interface Chat {
   createdAt: string
 }
 
-// Respuestas de la API
+// ============================================
+// RESPUESTAS DE LA API (FORMATO SPEC EXACTO)
+// ============================================
+
 export interface MensajesResponse {
   status: 'success'
   mensajes: Mensaje[]
@@ -52,7 +55,10 @@ export interface ApiError {
   message: string
 }
 
-// Inputs
+// ============================================
+// INPUTS
+// ============================================
+
 export interface CreateMensajeInput {
   contenido: string
   // direccion NO va aquí: la fija el servidor a 'saliente'

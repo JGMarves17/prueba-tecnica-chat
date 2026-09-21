@@ -1,6 +1,7 @@
 {
   "extends": ["next/core-web-vitals"],
   "rules": {
-    "react/no-unescaped-entities": "off"
+    // Solo reglas esenciales para evitar ruido
+    "react/no-unescaped-entities": "off"  // Permite apóstrofes en JSX sin escape
   }
 }

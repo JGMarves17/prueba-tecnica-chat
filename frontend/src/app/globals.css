@@ -8,19 +8,21 @@
 
 @layer base {
   * {
-    @apply border-gray-200 dark:border-gray-800;
+    @apply border-gray-200 dark:border-gray-800;  /* Bordes consistentes light/dark */
   }
 
   html {
-    @apply scroll-smooth;
+    @apply scroll-smooth;  /* Scroll suave para anclas y auto-scroll */
   }
 
   body {
     @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100;
+    /* Variantes de carácter de Inter (formas alternativas de algunas letras,
+       como la "a" de un solo piso con cv11). No son ligaduras. */
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Focus visible para accesibilidad */
+  /* Focus visible para accesibilidad (teclado) */
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-950;
   }

@@ -15,11 +15,11 @@ import type { Mensaje, CreateMensajeInput, MensajesResponse, CreateMensajeRespon
  */
 export function useMensajes(chatId: number, limit = 50, offset = 0, enabled = true) {
   return useQuery({
-    queryKey: apiKeys.mensajes(chatId),
+    queryKey: apiKeys.mensajes(chatId),        // Clave única por chatId
     queryFn: () => api.getMensajes(chatId, limit, offset),
-    enabled: enabled && !!chatId,
-    staleTime: 30_000, // 30 segundos
-    refetchOnWindowFocus: false,
+    enabled: enabled && !!chatId,              // Solo ejecuta si chatId válido
+    staleTime: 30_000,                         // 30 segundos: datos "frescos" sin refetch
+    refetchOnWindowFocus: false,               // No refetch al cambiar de pestaña
   })
 }
 
@@ -34,21 +34,22 @@ export function useSendMensaje(chatId: number) {
   return useMutation({
     mutationFn: (data: CreateMensajeInput) => api.sendMensaje(chatId, data),
     onMutate: async (newMensaje) => {
-      // Cancelar queries salientes
+      // 1. Cancelar queries salientes para evitar race conditions
       await queryClient.cancelQueries({ queryKey: apiKeys.mensajes(chatId) })
 
-      // Snapshot del cache anterior
+      // 2. Snapshot del cache anterior (para rollback si falla)
       const previousMensajes = queryClient.getQueryData<MensajesResponse>(apiKeys.mensajes(chatId))
 
-      // Optimistic update: agregar mensaje temporal
+      // 3. Optimistic update: agregar mensaje temporal INSTANTÁNEO
       const optimisticMensaje: Mensaje = {
-        id: Date.now(), // ID temporal
+        id: Date.now(),              // ID temporal (ms); onSuccess lo cambia por el real al revalidar
         chatId,
         contenido: newMensaje.contenido,
-        direccion: 'saliente', // Server fija 'saliente'
+        direccion: 'saliente',       // Server fija 'saliente'
         createdAt: new Date().toISOString(),
       }
 
+      // Actualiza cache optimísticamente
       queryClient.setQueryData<MensajesResponse>(
         apiKeys.mensajes(chatId),
         (old) => ({
@@ -60,10 +61,11 @@ export function useSendMensaje(chatId: number) {
         })
       )
 
+      // Retorna contexto para rollback en onError
       return { previousMensajes }
     },
     onError: (err, newMensaje, context) => {
-      // Rollback en error
+      // Rollback en error: restaura cache anterior
       if (context?.previousMensajes) {
         queryClient.setQueryData(apiKeys.mensajes(chatId), context.previousMensajes)
       }
@@ -89,6 +91,7 @@ export function useDeleteMensaje(chatId: number) {
       await queryClient.cancelQueries({ queryKey: apiKeys.mensajes(chatId) })
       const previousMensajes = queryClient.getQueryData<MensajesResponse>(apiKeys.mensajes(chatId))
 
+      // Optimistic update: quita mensaje del cache
       queryClient.setQueryData<MensajesResponse>(
         apiKeys.mensajes(chatId),
         (old) => ({
@@ -103,6 +106,7 @@ export function useDeleteMensaje(chatId: number) {
       return { previousMensajes }
     },
     onError: (err, id, context) => {
+      // Rollback en error
       if (context?.previousMensajes) {
         queryClient.setQueryData(apiKeys.mensajes(chatId), context.previousMensajes)
       }
@@ -122,8 +126,8 @@ export function useChat(chatId: number, enabled = true) {
     queryKey: apiKeys.chat(chatId),
     queryFn: () => api.getChat(chatId),
     enabled: enabled && !!chatId,
-    staleTime: 60_000, // 1 minuto
+    staleTime: 60_000, // 1 minuto (info de chat cambia poco)
     refetchOnWindowFocus: false,
-    select: (data: ChatResponse) => data.chat,
+    select: (data: ChatResponse) => data.chat,  // Extrae solo el objeto chat
   })
 }

@@ -7,18 +7,23 @@
  */
 import type { Mensaje, MensajesResponse, CreateMensajeInput, CreateMensajeResponse, DeleteMensajeResponse, ApiError, Chat, ChatResponse } from '@/types'
 
-/**
- * En desarrollo cae a localhost. En producción no hay valor razonable por
- * defecto, así que se deja vacío y cada llamada falla con un mensaje claro.
- *
- * NO se lanza a nivel de módulo: hacerlo tumba el bundle del cliente entero
- * y el usuario ve una página en blanco. Lanzando dentro de cada petición, el
- * error viaja por React Query y se muestra en la pantalla de error normal.
- */
+// ============================================
+// CONFIGURACIÓN DE URL BASE
+// ============================================
+// En desarrollo cae a localhost. En producción no hay valor razonable por
+// defecto, así que se deja vacío y cada llamada falla con un mensaje claro.
+//
+// NO se lanza a nivel de módulo: hacerlo tumba el bundle del cliente entero
+// y el usuario ve una página en blanco. Lanzando dentro de cada petición, el
+// error viaja por React Query y se muestra en la pantalla de error normal.
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ??
   (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
 
+/**
+ * Obtiene la URL base validando que existe
+ * Lanza error descriptivo si falta en producción
+ */
 function baseUrl(): string {
   if (!API_BASE) {
     throw new Error(
@@ -112,6 +117,7 @@ export const api = {
 
 /**
  * Keys para React Query
+ * Usan tuplas para claves estables y tipadas
  */
 export const apiKeys = {
   mensajes: (chatId: number) => ['mensajes', chatId] as const,

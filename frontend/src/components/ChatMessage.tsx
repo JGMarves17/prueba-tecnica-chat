@@ -24,30 +24,48 @@ export function ChatMessage({ mensaje, onDelete }: ChatMessageProps) {
   const isSaliente = mensaje.direccion === 'saliente'
 
   return (
+    // ============================================
+    // WRAPPER PRINCIPAL (group para group-hover)
+    // ============================================
+    // group: permite group-hover:opacity-100 en el botón de eliminar
+    // w-full + justify-end/start: alinea a derecha (saliente) o izquierda (entrante)
+    // animate-fade-in: animación de entrada suave
     <div
       className={cn(
         'group flex w-full items-end gap-2 px-1 py-1 animate-fade-in',
-        isSaliente ? 'justify-end' : 'justify-start'
+        isSaliente ? 'justify-end' : 'justify-start'  // Alineación según dirección
       )}
     >
-      {/* Avatar del cliente */}
+      {/* ============================================
+          AVATAR CLIENTE (solo mensajes entrantes)
+          ============================================ */}
       {!isSaliente && (
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-300 text-xs font-medium">
           C
         </div>
       )}
 
+      {/* ============================================
+          BURBUJA DEL MENSAJE
+          ============================================ */}
       <div
         className={cn(
           'relative rounded-2xl px-4 py-2 text-sm max-w-[75%] sm:max-w-[60%] shadow-sm',
           isSaliente
+            // Saliente: azul a la derecha. La esquina inferior derecha es menos
+            // redondeada (md en vez de 2xl) y hace de "cola" de la burbuja.
             ? 'bg-primary-500 text-white rounded-br-md'
+            // Entrante: gris a la izquierda, con la cola en la esquina inferior izquierda.
             : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
         )}
       >
-        {/* pr-6 reserva sitio para el boton de eliminar en la primera linea */}
+        {/* pr-6 reserva espacio para el botón de eliminar en la primera línea */}
         <p className="whitespace-pre-wrap break-words pr-6">{mensaje.contenido}</p>
 
+        {/* Hora en flujo normal (no absolute) para no solaparse con texto largo.
+            dateTime lleva la fecha ISO completa, legible por máquinas y lectores
+            de pantalla; el texto visible es solo la hora ("14:30").
+            tabular-nums da a todos los dígitos el mismo ancho. */}
         <time
           className={cn(
             'block text-right text-[10px] mt-1 tabular-nums',
@@ -58,11 +76,16 @@ export function ChatMessage({ mensaje, onDelete }: ChatMessageProps) {
           {formatDate(mensaje.createdAt)}
         </time>
 
+        {/* ============================================
+            BOTÓN ELIMINAR (visible en hover/focus)
+            ============================================ */}
         {onDelete && (
           <button
             onClick={() => onDelete(mensaje.id)}
             className={cn(
               'absolute top-1 right-1 p-1 rounded-md transition-opacity',
+              // group-hover: visible al hacer hover en el wrapper (group)
+              // focus-visible: visible al navegar con teclado (accesibilidad)
               'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
               isSaliente
                 ? 'text-white/60 hover:text-white hover:bg-white/20'
@@ -78,7 +101,9 @@ export function ChatMessage({ mensaje, onDelete }: ChatMessageProps) {
         )}
       </div>
 
-      {/* Avatar del negocio */}
+      {/* ============================================
+          AVATAR NEGOCIO (solo mensajes salientes)
+          ============================================ */}
       {isSaliente && (
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-medium">
           N

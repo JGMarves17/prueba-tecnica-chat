@@ -1,11 +1,32 @@
 # Configuración Cloudflare Workers para Hono
-name = "chat-backend"
-main = "src/index.ts"
-compatibility_date = "2024-09-06"
-compatibility_flags = ["nodejs_compat"]
+# Documentación: https://developers.cloudflare.com/workers/wrangler/configuration/
 
-# Variables de entorno (configurar en dashboard de Cloudflare)
-# DATABASE_URL se accede via c.env.DATABASE_URL en el código
+name = "chat-backend"                    # Nombre del Worker: da la URL chat-backend.<subdominio>.workers.dev
+main = "src/index.ts"                    # Punto de entrada. Wrangler lo empaqueta con esbuild en dev y deploy
+compatibility_date = "2024-09-06"        # Congela el comportamiento del runtime a esta fecha
+compatibility_flags = ["nodejs_compat"]  # Habilita parte de las APIs de Node (Buffer, crypto...)
+
+# ============================================
+# VARIABLES DE ENTORNO (NO SECRETS)
+# ============================================
+# Las vars aquí son visibles en dashboard y logs.
+# NO pongas DATABASE_URL aquí, usa Secrets (ver abajo).
 [vars]
-# NO pongas DATABASE_URL aquí, usa Secrets en el dashboard:
+# ENVIRONMENT = "production"  # Ejemplo de variable no sensible
+
+# ============================================
+# SECRETS (CONFIGURAR EN DASHBOARD O CLI)
+# ============================================
 # wrangler secret put DATABASE_URL
+# Luego pega tu connection string de Neon:
+# postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/db?sslmode=require
+#
+# En el código se accede via: c.env.DATABASE_URL (tipado en la interface Env)
+# Este archivo se sube a git, así que aquí nunca van secretos.
+
+# ============================================
+# LÍMITES
+# ============================================
+# No se declara un bloque [limits]: el plan Free no permite configurar
+# cpu_ms (fue la causa de un deploy fallido) y ya aplica su propio límite
+# de 10 ms de CPU por petición. Si se supera, el Worker responde error 1102.

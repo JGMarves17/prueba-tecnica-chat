@@ -23,7 +23,11 @@ interface ChatPageProps {
 }
 
 export default function ChatPage({ params }: ChatPageProps) {
-  // Validar chatId: parseInt trunca "1abc" -> 1, así que validamos formato exacto
+  // ============================================
+  // VALIDACIÓN ESTRICTA DE CHAT ID
+  // ============================================
+  // Next.js 14 pasa params como objeto plano { id: string }
+  // parseInt("1abc") → 1 (trunca), así que validamos formato EXACTO con regex
   const rawId = params.id
   const isValidChatId = /^\d+$/.test(rawId) && parseInt(rawId, 10) > 0
   const chatId = isValidChatId ? parseInt(rawId, 10) : 0
@@ -87,7 +91,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   if (isError) {
-    // Manejar "Failed to fetch" y otros errores de red
+    // Manejar "Failed to fetch" y otros errores de red con mensaje amigable
     const errorMessage = error instanceof TypeError && error.message === 'Failed to fetch'
       ? 'No se puede conectar con el servidor. Verifica que el backend esté corriendo.'
       : (error as Error)?.message || 'No se pudieron cargar los mensajes'
@@ -115,7 +119,9 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Header del chat */}
+      {/* ============================================
+          HEADER DEL CHAT (sticky top-0)
+          ============================================ */}
       <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
         <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
           <span className="text-primary-700 dark:text-primary-300 font-medium">#{chatId}</span>
@@ -139,13 +145,18 @@ export default function ChatPage({ params }: ChatPageProps) {
         </button>
       </header>
 
-      {/* Lista de mensajes */}
+      {/* ============================================
+          LISTA DE MENSAJES (main con role="log" para accesibilidad)
+          ============================================ */}
       <main 
         role="log" 
         aria-live="polite" 
         aria-label="Conversación del chat"
         className="flex-1 overflow-y-auto p-4 space-y-3"
       >
+        {/* Estado EMPTY si no hay mensajes; si los hay, una burbuja por mensaje.
+            El comentario va aquí fuera a propósito: dentro del ternario, un
+            comentario JSX se leería como un objeto vacío y rompería el JSX. */}
         {mensajes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
             <svg className="h-16 w-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,19 +170,24 @@ export default function ChatPage({ params }: ChatPageProps) {
             {mensajes.map((mensaje: Mensaje) => (
               <ChatMessage key={mensaje.id} mensaje={mensaje} onDelete={handleDelete} />
             ))}
+            {/* Anchor para auto-scroll al final */}
             <div ref={messagesEndRef} />
           </>
         )}
       </main>
 
-      {/* Error de borrado (toast inline) */}
+      {/* ============================================
+          ERROR DE BORRADO (toast inline)
+          ============================================ */}
       {deleteError && (
         <div className="mx-4 mb-2 px-4 py-2 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg" role="alert">
           {deleteError}
         </div>
       )}
 
-      {/* Input para enviar mensajes - pasa sendMutation unificado */}
+      {/* ============================================
+          INPUT PARA ENVIAR MENSAJES - pasa sendMutation unificado
+          ============================================ */}
       <ChatInput sendMutation={sendMutation} />
     </div>
   )
